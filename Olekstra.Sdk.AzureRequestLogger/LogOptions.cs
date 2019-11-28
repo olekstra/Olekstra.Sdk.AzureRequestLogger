@@ -16,6 +16,8 @@
 
         public List<PathString> Paths { get; } = new List<PathString>();
 
+        public int BodyLengthLimit { get; set; } = 20_000;
+
         /// <summary>
         /// Adds path to <see cref="Paths"/> list.
         /// </summary>
@@ -59,6 +61,17 @@
         public LogOptions Every(TimeSpan interval)
         {
             this.Interval = interval;
+            return this;
+        }
+
+        /// <summary>
+        /// Set <see cref="BodyLengthLimit"/> property.
+        /// </summary>
+        /// <param name="sizeInBytes">Value to set.</param>
+        /// <returns>Current <see cref="LogOptions"/> object.</returns>
+        public LogOptions MaxBody(int sizeInBytes)
+        {
+            this.BodyLengthLimit = sizeInBytes;
             return this;
         }
     }

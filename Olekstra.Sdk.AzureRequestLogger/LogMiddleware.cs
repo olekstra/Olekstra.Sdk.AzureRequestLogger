@@ -11,17 +11,17 @@
 
     public class LogMiddleware
     {
-        private const int MaxBodyLength = 100_000;
-
         private readonly RequestDelegate next;
         private readonly LogService logService;
         private readonly List<PathString> paths;
+        private readonly int bodyLengthLimit;
 
         public LogMiddleware(RequestDelegate next, LogOptions options, ILoggerFactory loggerFactory)
         {
             this.next = next ?? throw new ArgumentNullException(nameof(next));
             this.logService = new LogService(options, loggerFactory.CreateLogger<LogService>());
             this.paths = options.Paths;
+            this.bodyLengthLimit = options.BodyLengthLimit;
         }
 
         public Task InvokeAsync(HttpContext context)
@@ -55,9 +55,9 @@
                 request.Body.Position = 0;
                 requestLength = request.Body.Length;
 
-                if (requestBody.Length > MaxBodyLength)
+                if (requestBody.Length > bodyLengthLimit)
                 {
-                    requestBody = "(TRUNCATED) " + requestBody.Substring(0, MaxBodyLength);
+                    requestBody = "(TRUNCATED) " + requestBody.Substring(0, bodyLengthLimit);
                 }
             }
 
@@ -95,9 +95,9 @@
                 var responseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
                 var responseLength = ms.Length;
 
-                if (responseBody.Length > MaxBodyLength)
+                if (responseBody.Length > bodyLengthLimit)
                 {
-                    responseBody = "(TRUNCATED) " + responseBody.Substring(0, MaxBodyLength);
+                    responseBody = "(TRUNCATED) " + responseBody.Substring(0, bodyLengthLimit);
                 }
 
                 context.Response.Body = originalResponseBody;
