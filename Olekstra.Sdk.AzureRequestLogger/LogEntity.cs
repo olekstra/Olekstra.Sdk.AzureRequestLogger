@@ -2,10 +2,15 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Microsoft.Azure.Cosmos.Table;
 
     public class LogEntity : ITableEntity
     {
+        private const string AdditionalValuePrefix = "X_";
+
+        private Dictionary<string, string>? additionalValues = null;
+
         public LogEntity(string path, DateTimeOffset requestTime)
             : this(path?.Trim('/'), requestTime.GetInvertedTicks())
         {
@@ -38,6 +43,24 @@
         public string? Exception { get; set; }
         public string? IP { get; set; }
 
+        public Dictionary<string, string> AdditionalValues
+        {
+            get
+            {
+                if (additionalValues == null)
+                {
+                    additionalValues = new Dictionary<string, string>();
+                }
+
+                return additionalValues;
+            }
+
+            private set
+            {
+                additionalValues = value;
+            }
+        }
+
         /*
          * Override and manually read/write values is faster than using reflection
          */
@@ -61,6 +84,11 @@
             Exception = properties.TryGet(nameof(Exception))?.StringValue;
             IP = properties.TryGet(nameof(IP))?.StringValue;
 #pragma warning restore CS8629 // Nullable value type may be null.
+
+            foreach(var p in properties.Where(x => x.Key.StartsWith(AdditionalValuePrefix, StringComparison.Ordinal)))
+            {
+                AdditionalValues.Add(p.Key.Substring(AdditionalValuePrefix.Length), p.Value.StringValue);
+            }
         }
 
         /*
@@ -68,7 +96,7 @@
          */
         public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
-            return new Dictionary<string, EntityProperty>
+            var dic = new Dictionary<string, EntityProperty>
             {
                 [nameof(RequestTime)] = new EntityProperty(RequestTime),
                 [nameof(Method)] = new EntityProperty(Method),
@@ -85,6 +113,19 @@
                 [nameof(Exception)] = new EntityProperty(Exception),
                 [nameof(IP)] = new EntityProperty(IP)
             };
+
+            if (additionalValues != null)
+            {
+                foreach(var kv in additionalValues)
+                {
+                    if (!string.IsNullOrEmpty(kv.Value))
+                    {
+                        dic.Add(AdditionalValuePrefix + kv.Key, new EntityProperty(kv.Value));
+                    }
+                }
+            }
+
+            return dic;
         }
     }
 }

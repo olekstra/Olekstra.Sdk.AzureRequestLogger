@@ -36,7 +36,7 @@ namespace Olekstra.Sdk.AzureRequestLogger.Demo
                 endpoints.MapGet("/test2", async context =>
                 {
                     var f = context.Features.Get<AzureRequestLoggerFeature>();
-                    f.LogEntity.PartitionKey = "!!!" + f.LogEntity.PartitionKey;
+                    f.LogEntity.AdditionalValues.Add("SomeKey", "SomeValue");
 
                     await context.Response.WriteAsync("Hello World!");
                 });
