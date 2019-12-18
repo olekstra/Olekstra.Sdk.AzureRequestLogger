@@ -1,6 +1,5 @@
 ﻿namespace Olekstra.Sdk.AzureRequestLogger
 {
-    using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
     using Microsoft.Azure.Cosmos.Table;
     using System;
@@ -13,15 +12,9 @@
     {
         private const int MaxBatch = 100;
 
+        private readonly LogOptions options;
+
         private readonly CloudTableClient cloudTableClient;
-
-        private CloudTable? cloudTable;
-
-        private readonly string tableName;
-
-        private readonly TimeSpan interval;
-
-        private readonly TableNameSuffixMode tableNameSuffixMode;
 
         private readonly ILogger logger;
 
@@ -29,68 +22,42 @@
 
         private readonly Task saveLogTask;
 
+        private CloudTable? cloudTable;
+
         public LogService(LogOptions options, ILogger<LogService> logger)
         {
-            options = options ?? throw new ArgumentNullException(nameof(options));
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
 
             var storageAccount = CloudStorageAccount.Parse(options.ConnectionString);
             cloudTableClient = storageAccount.CreateCloudTableClient();
-
-            this.tableName = options.TableName;
-            this.interval = options.Interval;
-            this.tableNameSuffixMode = options.TableNameSuffixMode;
 
             this.logger = logger;
 
             this.saveLogTask = Task.Run(() => SaveLoop());
         }
 
-        public static string SanitizeKeyValue(string value)
+        public static string SanitizeKeyValue(string value, char replacement)
         {
             value = value ?? throw new ArgumentNullException(nameof(value));
 
             var valid = value.Select(x => x switch
             {
-                '/' => '_',
-                '\\' => '_',
-                '#' => '_',
-                '?' => '_',
-                '+' => '_',
-                _ when x <= '\u001F' => '_',
-                _ when x >= '\u007F' && x <= '\u009F' => '_',
+                '/' => replacement,
+                '\\' => replacement,
+                '#' => replacement,
+                '?' => replacement,
+                '+' => replacement,
+                _ when x <= '\u001F' => replacement,
+                _ when x >= '\u007F' && x <= '\u009F' => replacement,
                 _ => x,
             });
 
             return new string(valid.ToArray());
         }
 
-        public void Log(DateTimeOffset requestTime, string? request, string? response, string method, PathString path, string? query, long requestLenght, long responseLenght, int statusCode, TimeSpan totalTime, string? exception, string? ip)
-        {
-            LogEntity entity = new LogEntity(path.ToString().Trim('/').Replace('/', '-'), requestTime);
-
-            entity.Method = method;
-            entity.Path = path;
-            entity.Query = query;
-            entity.StatusCode = statusCode;
-            entity.TotalMilliseconds = (long)totalTime.TotalMilliseconds;
-
-            entity.RequestBody = request;
-            entity.ResponseBody = response;
-            entity.RequestBodyLength = requestLenght;
-            entity.ResponseBodyLength = responseLenght;
-
-            entity.Exception = exception;
-            entity.IP = ip;
-
-            logEntities.Add(entity);
-        }
-
         public void Log(LogEntity logEntity)
         {
             logEntity = logEntity ?? throw new ArgumentNullException(nameof(logEntity));
-
-            logEntity.PartitionKey = SanitizeKeyValue(logEntity.PartitionKey);
-            logEntity.RowKey = SanitizeKeyValue(logEntity.RowKey);
 
             logEntities.Add(logEntity);
         }
@@ -99,18 +66,18 @@
         {
             var now = DateTimeOffset.UtcNow;
 
-            return tableNameSuffixMode switch
+            return options.TableNameSuffixMode switch
             {
-                TableNameSuffixMode.Year => tableName + now.Year,
-                TableNameSuffixMode.YearAndQuarter => tableName + now.Year + "q" + now.GetQuarter(),
-                TableNameSuffixMode.YearAndMonth => tableName + now.Year + "m" + now.Month,
-                _ => tableName,
+                TableNameSuffixMode.Year => options.TableName + now.Year,
+                TableNameSuffixMode.YearAndQuarter => options.TableName + now.Year + "q" + now.GetQuarter(),
+                TableNameSuffixMode.YearAndMonth => options.TableName + now.Year + "m" + now.Month,
+                _ => options.TableName,
             };
         }
 
         private async Task SaveLoop()
         {
-            logger.LogDebug($"Started (in SaveLoop) with table {tableName} and suffix mode {tableNameSuffixMode}");
+            logger.LogDebug($"Started (in SaveLoop) with table {options.TableName} and suffix mode {options.TableNameSuffixMode}");
 
             while (true)
             {
@@ -137,6 +104,9 @@
                         {
                             if (logEntities.TryTake(out var item))
                             {
+                                item.PartitionKey = SanitizeKeyValue(item.PartitionKey, options.KeySanitizationReplacement);
+                                item.RowKey = SanitizeKeyValue(item.RowKey, options.KeySanitizationReplacement);
+
                                 entities.Add(item);
                             }
                             else
@@ -167,7 +137,7 @@
                     }
                 }
 
-                await Task.Delay(interval).ConfigureAwait(false);
+                await Task.Delay(options.Interval).ConfigureAwait(false);
             }
         }
     }

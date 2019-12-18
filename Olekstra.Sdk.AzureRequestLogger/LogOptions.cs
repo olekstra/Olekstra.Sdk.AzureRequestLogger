@@ -18,6 +18,8 @@
 
         public int BodyLengthLimit { get; set; } = 20_000;
 
+        public char KeySanitizationReplacement { get; set; } = '_';
+
         /// <summary>
         /// Adds path to <see cref="Paths"/> list.
         /// </summary>
