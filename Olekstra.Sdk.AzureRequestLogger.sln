@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Olekstra.Sdk.AzureRequestLogger", "Olekstra.Sdk.AzureRequestLogger\Olekstra.Sdk.AzureRequestLogger.csproj", "{D41E19AB-531A-49F0-905D-399150402CBA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olekstra.Sdk.AzureRequestLogger.Demo", "Olekstra.Sdk.AzureRequestLogger.Demo\Olekstra.Sdk.AzureRequestLogger.Demo.csproj", "{B31E3F71-0EF1-4907-BFA0-30E559031D00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Olekstra.Sdk.AzureRequestLogger.Demo", "Olekstra.Sdk.AzureRequestLogger.Demo\Olekstra.Sdk.AzureRequestLogger.Demo.csproj", "{B31E3F71-0EF1-4907-BFA0-30E559031D00}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Olekstra.Sdk.AzureRequestLogger.Tests", "Olekstra.Sdk.AzureRequestLogger.Tests\Olekstra.Sdk.AzureRequestLogger.Tests.csproj", "{625027BC-BFB7-4139-B9C8-D276483FC73B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,6 +50,18 @@ Global
 		{B31E3F71-0EF1-4907-BFA0-30E559031D00}.Release|x64.Build.0 = Release|Any CPU
 		{B31E3F71-0EF1-4907-BFA0-30E559031D00}.Release|x86.ActiveCfg = Release|Any CPU
 		{B31E3F71-0EF1-4907-BFA0-30E559031D00}.Release|x86.Build.0 = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|x64.Build.0 = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Debug|x86.Build.0 = Debug|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|x64.ActiveCfg = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|x64.Build.0 = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|x86.ActiveCfg = Release|Any CPU
+		{625027BC-BFB7-4139-B9C8-D276483FC73B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,16 +6,17 @@
 
     public class LogEntity : ITableEntity
     {
-        public LogEntity(string partitionKey, DateTimeOffset requestTime)
+        public LogEntity(string path, DateTimeOffset requestTime)
+            : this(path?.Trim('/'), requestTime.GetInvertedTicks())
         {
-            if (string.IsNullOrEmpty(partitionKey))
-            {
-                throw new ArgumentNullException(nameof(partitionKey));
-            }
-
+            this.Path = path;
             this.RequestTime = requestTime;
-            this.PartitionKey = partitionKey;
-            this.RowKey = this.RequestTime.GetInvertedTicks();
+        }
+
+        public LogEntity(string partitionKey, string rowKey)
+        {
+            this.PartitionKey = partitionKey ?? throw new ArgumentNullException(nameof(partitionKey));
+            this.RowKey = rowKey ?? throw new ArgumentNullException(nameof(rowKey));
             this.ETag = string.Empty;
         }
 

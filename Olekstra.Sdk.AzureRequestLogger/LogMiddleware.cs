@@ -47,73 +47,69 @@
 
             request.EnableBuffering();
 
-            var requestTime = DateTimeOffset.UtcNow;
-            string? requestBody = default;
-            long requestLength = 0;
+            var logEntity = new LogEntity(request.Path.ToString(), DateTimeOffset.UtcNow)
+            {
+                Method = request.Method,
+                Query = request.QueryString.HasValue ? request.QueryString.ToString() : default,
+                IP = context.Connection.RemoteIpAddress.ToString(),
+            };
 
             if (request.Body != null)
             {
                 using var reader = new StreamReader(request.Body, leaveOpen: true);
-                requestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
-                request.Body.Position = 0;
-                requestLength = request.Body.Length;
+                logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                logEntity.RequestBodyLength = request.Body.Length;
 
-                if (requestBody.Length > bodyLengthLimit)
+                if (logEntity.RequestBodyLength > bodyLengthLimit)
                 {
-                    requestBody = "(TRUNCATED) " + requestBody.Substring(0, bodyLengthLimit);
+                    logEntity.RequestBody = "(TRUNCATED) " + logEntity.RequestBody.Substring(0, bodyLengthLimit);
                 }
+
+                request.Body.Position = 0;
             }
-
-            var method = request.Method;
-            var path = request.Path;
-            var query = context.Request.QueryString.HasValue ? context.Request.QueryString.ToString() : default;
-
-            string? exception = default;
-            var ip = context.Connection.RemoteIpAddress.ToString();
 
             var elapsed = TimeSpan.Zero;
 
             var originalResponseBody = context.Response.Body;
             context.Response.Body = new MemoryStream();
 
-            var logFeature = new AzureRequestLoggerFeature();
+            var logFeature = new AzureRequestLoggerFeature(logEntity);
             if (context.Features.IsReadOnly)
             {
                 logger.LogDebug($"HttpContext.Features.IsReadOnly={context.Features.IsReadOnly}, will not use own feature.");
             }
             else
             {
-                logFeature.Path = path;
-                logFeature.IP = ip;
-                logFeature.RequestTime = requestTime;
                 context.Features.Set(logFeature);
             }
 
+            var sw = Stopwatch.StartNew();
+
             try
             {
-                var sw = Stopwatch.StartNew();
                 await next(context).ConfigureAwait(false);
-                elapsed = sw.Elapsed;
             }
             catch (Exception ex)
             {
-                exception = ex.ToString();
+                logEntity.Exception = ex.ToString();
                 throw;
             }
             finally
             {
                 var response = context.Response;
-                var responseStatusCode = response.StatusCode;
+
+                logEntity.StatusCode = response.StatusCode;
+                logEntity.TotalMilliseconds = (long)sw.Elapsed.TotalMilliseconds;
 
                 var ms = (MemoryStream)response.Body;
                 ms.Position = 0;
                 using var reader = new StreamReader(ms, leaveOpen: true);
-                var responseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
-                var responseLength = ms.Length;
+                logEntity.ResponseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                logEntity.ResponseBodyLength = ms.Length;
 
-                if (responseBody.Length > bodyLengthLimit)
+                if (logEntity.ResponseBodyLength > bodyLengthLimit)
                 {
-                    responseBody = "(TRUNCATED) " + responseBody.Substring(0, bodyLengthLimit);
+                    logEntity.ResponseBody = "(TRUNCATED) " + logEntity.ResponseBody.Substring(0, bodyLengthLimit);
                 }
 
                 context.Response.Body = originalResponseBody;
@@ -122,12 +118,8 @@
                 await ms.CopyToAsync(originalResponseBody).ConfigureAwait(false);
                 await ms.DisposeAsync();
 
-                logService.Log(requestTime, requestBody, responseBody, method, path, query, requestLength, responseLength, responseStatusCode, elapsed, exception, ip);
+                logService.Log(logEntity);
             }
-
-            var responseStream = context.Response.Body;
-            var responseBuffer = new MemoryStream();
-            context.Response.Body = responseBuffer;
         }
     }
 }

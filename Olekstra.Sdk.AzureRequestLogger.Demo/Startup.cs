@@ -33,6 +33,14 @@ namespace Olekstra.Sdk.AzureRequestLogger.Demo
                     await context.Response.WriteAsync("Hello World!");
                 });
 
+                endpoints.MapGet("/test2", async context =>
+                {
+                    var f = context.Features.Get<AzureRequestLoggerFeature>();
+                    f.LogEntity.PartitionKey = "!!!" + f.LogEntity.PartitionKey;
+
+                    await context.Response.WriteAsync("Hello World!");
+                });
+
                 endpoints.MapPost("/test2", async context =>
                 {
                     using var reader = new System.IO.StreamReader(context.Request.Body);

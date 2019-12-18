@@ -45,6 +45,25 @@
             this.saveLogTask = Task.Run(() => SaveLoop());
         }
 
+        public static string SanitizeKeyValue(string value)
+        {
+            value = value ?? throw new ArgumentNullException(nameof(value));
+
+            var valid = value.Select(x => x switch
+            {
+                '/' => '_',
+                '\\' => '_',
+                '#' => '_',
+                '?' => '_',
+                '+' => '_',
+                _ when x <= '\u001F' => '_',
+                _ when x >= '\u007F' && x <= '\u009F' => '_',
+                _ => x,
+            });
+
+            return new string(valid.ToArray());
+        }
+
         public void Log(DateTimeOffset requestTime, string? request, string? response, string method, PathString path, string? query, long requestLenght, long responseLenght, int statusCode, TimeSpan totalTime, string? exception, string? ip)
         {
             LogEntity entity = new LogEntity(path.ToString().Trim('/').Replace('/', '-'), requestTime);
@@ -68,6 +87,11 @@
 
         public void Log(LogEntity logEntity)
         {
+            logEntity = logEntity ?? throw new ArgumentNullException(nameof(logEntity));
+
+            logEntity.PartitionKey = SanitizeKeyValue(logEntity.PartitionKey);
+            logEntity.RowKey = SanitizeKeyValue(logEntity.RowKey);
+
             logEntities.Add(logEntity);
         }
 
@@ -92,7 +116,9 @@
             {
                 if (logEntities.Count == 0)
                 {
+#pragma warning disable CA1303 // Do not pass literals as localized parameters
                     logger.LogTrace("Nothing to save, sleeping again.");
+#pragma warning restore CA1303 // Do not pass literals as localized parameters
                 }
                 else
                 {
