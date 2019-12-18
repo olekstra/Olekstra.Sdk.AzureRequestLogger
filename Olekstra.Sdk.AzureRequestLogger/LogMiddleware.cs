@@ -15,6 +15,7 @@
         private readonly LogService logService;
         private readonly List<PathString> paths;
         private readonly int bodyLengthLimit;
+        private readonly ILogger logger;
 
         public LogMiddleware(RequestDelegate next, LogOptions options, ILoggerFactory loggerFactory)
         {
@@ -22,6 +23,7 @@
             this.logService = new LogService(options, loggerFactory.CreateLogger<LogService>());
             this.paths = options.Paths;
             this.bodyLengthLimit = options.BodyLengthLimit;
+            this.logger = loggerFactory.CreateLogger<LogMiddleware>();
         }
 
         public Task InvokeAsync(HttpContext context)
@@ -45,6 +47,7 @@
 
             request.EnableBuffering();
 
+            var requestTime = DateTimeOffset.UtcNow;
             string? requestBody = default;
             long requestLength = 0;
 
@@ -73,9 +76,22 @@
             var originalResponseBody = context.Response.Body;
             context.Response.Body = new MemoryStream();
 
+            var logFeature = new AzureRequestLoggerFeature();
+            if (context.Features.IsReadOnly)
+            {
+                logger.LogDebug($"HttpContext.Features.IsReadOnly={context.Features.IsReadOnly}, will not use own feature.");
+            }
+            else
+            {
+                logFeature.Path = path;
+                logFeature.IP = ip;
+                logFeature.RequestTime = requestTime;
+                context.Features.Set(logFeature);
+            }
+
             try
             {
-                var sw = new Stopwatch();
+                var sw = Stopwatch.StartNew();
                 await next(context).ConfigureAwait(false);
                 elapsed = sw.Elapsed;
             }
@@ -106,7 +122,7 @@
                 await ms.CopyToAsync(originalResponseBody).ConfigureAwait(false);
                 await ms.DisposeAsync();
 
-                logService.Log(requestBody, responseBody, method, path, query, requestLength, responseLength, responseStatusCode, elapsed, exception, ip);
+                logService.Log(requestTime, requestBody, responseBody, method, path, query, requestLength, responseLength, responseStatusCode, elapsed, exception, ip);
             }
 
             var responseStream = context.Response.Body;

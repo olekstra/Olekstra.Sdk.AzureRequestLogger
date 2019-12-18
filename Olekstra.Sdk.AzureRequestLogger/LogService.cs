@@ -2,8 +2,7 @@
 {
     using Microsoft.AspNetCore.Http;
     using Microsoft.Extensions.Logging;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Cosmos.Table;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -46,9 +45,9 @@
             this.saveLogTask = Task.Run(() => SaveLoop());
         }
 
-        public void Log(string? request, string? response, string method, PathString path, string? query, long requestLenght, long responseLenght, int statusCode, TimeSpan totalTime, string? exception, string? ip)
+        public void Log(DateTimeOffset requestTime, string? request, string? response, string method, PathString path, string? query, long requestLenght, long responseLenght, int statusCode, TimeSpan totalTime, string? exception, string? ip)
         {
-            LogEntity entity = new LogEntity(path.ToString().Trim('/').Replace('/', '-'));
+            LogEntity entity = new LogEntity(path.ToString().Trim('/').Replace('/', '-'), requestTime);
 
             entity.Method = method;
             entity.Path = path;

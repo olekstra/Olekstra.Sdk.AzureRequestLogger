@@ -2,24 +2,29 @@
 {
     using System;
     using System.Collections.Generic;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Table;
+    using Microsoft.Azure.Cosmos.Table;
 
-    public class LogEntity : TableEntity
+    public class LogEntity : ITableEntity
     {
-        public LogEntity(string partitionKey)
+        public LogEntity(string partitionKey, DateTimeOffset requestTime)
         {
             if (string.IsNullOrEmpty(partitionKey))
             {
                 throw new ArgumentNullException(nameof(partitionKey));
             }
 
-            this.RequestTime = DateTimeOffset.Now;
+            this.RequestTime = requestTime;
             this.PartitionKey = partitionKey;
             this.RowKey = this.RequestTime.GetInvertedTicks();
+            this.ETag = string.Empty;
         }
 
-        public DateTimeOffset RequestTime { get; set; }
+        public string PartitionKey { get; set; }
+        public string RowKey { get; set; }
+        public DateTimeOffset Timestamp { get; set; }
+        public string ETag { get; set; }
+
+        public DateTimeOffset RequestTime { get; private set; }
         public string? Method { get; set; }
         public string? Path { get; set; }
         public string? Query { get; set; }
@@ -35,7 +40,7 @@
         /*
          * Override and manually read/write values is faster than using reflection
          */
-        public override void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
+        public void ReadEntity(IDictionary<string, EntityProperty> properties, OperationContext operationContext)
         {
             properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
@@ -60,7 +65,7 @@
         /*
          * Override and manually read/write values is faster than using reflection
          */
-        public override IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
+        public IDictionary<string, EntityProperty> WriteEntity(OperationContext operationContext)
         {
             return new Dictionary<string, EntityProperty>
             {

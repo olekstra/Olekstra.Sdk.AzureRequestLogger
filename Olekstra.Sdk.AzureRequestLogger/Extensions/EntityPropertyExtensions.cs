@@ -1,4 +1,4 @@
-﻿namespace Microsoft.WindowsAzure.Storage.Table
+﻿namespace Microsoft.Azure.Cosmos.Table
 {
     using System;
     using System.Collections.Generic;
