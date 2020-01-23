@@ -4,9 +4,9 @@
     using System.Collections.Generic;
     using System.Text.Json;
 
-    public static class EntityPropertyExtensions
+    internal static class EntityPropertyExtensions
     {
-        public static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        internal static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             AllowTrailingCommas = true,
             IgnoreNullValues = true,
@@ -16,7 +16,7 @@
             WriteIndented = false,
         };
 
-        public static EntityProperty? TryGet(this IDictionary<string, EntityProperty> properties, string name)
+        internal static EntityProperty? TryGet(this IDictionary<string, EntityProperty> properties, string name)
         {
             properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
@@ -24,7 +24,7 @@
             return prop;
         }
 
-        public static void Set(this IDictionary<string, EntityProperty> properties, string name, string value)
+        internal static void Set(this IDictionary<string, EntityProperty> properties, string name, string value)
         {
             properties = properties ?? throw new ArgumentNullException(nameof(properties));
 
@@ -34,7 +34,7 @@
             }
         }
 
-        public static T? TryGetDeserialized<T>(this IDictionary<string, EntityProperty> properties, string name)
+        internal static T? TryGetDeserialized<T>(this IDictionary<string, EntityProperty> properties, string name)
             where T : class
         {
             properties = properties ?? throw new ArgumentNullException(nameof(properties));
@@ -54,7 +54,7 @@
             return JsonSerializer.Deserialize<T>(val, JsonOptions);
         }
 
-        public static void SetSerialized<T>(this IDictionary<string, EntityProperty> properties, string name, T value)
+        internal static void SetSerialized<T>(this IDictionary<string, EntityProperty> properties, string name, T value)
             where T : class
         {
             properties = properties ?? throw new ArgumentNullException(nameof(properties));

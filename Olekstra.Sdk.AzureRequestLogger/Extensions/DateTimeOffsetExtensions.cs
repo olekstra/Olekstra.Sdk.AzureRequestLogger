@@ -5,9 +5,9 @@
     /// <summary>
     /// Some useful extensions from https://bitbucket.org/snippets/just_dmitry/LEaRG/datetimeoffset-extensions.
     /// </summary>
-    public static class DateTimeOffsetExtensions
+    internal static class DateTimeOffsetExtensions
     {
-        public static int GetQuarter(this DateTimeOffset value)
+        internal static int GetQuarter(this DateTimeOffset value)
         {
             return value.Month switch
             {
@@ -27,18 +27,18 @@
             };
         }
 
-        public static string GetInvertedTicks(this DateTimeOffset value)
+        internal static string GetInvertedTicks(this DateTimeOffset value)
         {
             return string.Format(CultureInfo.InvariantCulture, "{0:D19}", DateTimeOffset.MaxValue.Ticks - value.UtcTicks);
         }
 
-        public static DateTimeOffset FromInvertedTicks(this string value)
+        internal static DateTimeOffset FromInvertedTicks(this string value)
         {
             var ticks = long.Parse(value, CultureInfo.InvariantCulture);
             return new DateTimeOffset(DateTimeOffset.MaxValue.Ticks - ticks, TimeSpan.Zero);
         }
 
-        public static DateTimeOffset Truncate(this DateTimeOffset value, TimeSpan timeSpan)
+        internal static DateTimeOffset Truncate(this DateTimeOffset value, TimeSpan timeSpan)
         {
             if (timeSpan == TimeSpan.Zero)
             {

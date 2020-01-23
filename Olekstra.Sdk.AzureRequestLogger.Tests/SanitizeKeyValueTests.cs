@@ -13,7 +13,7 @@ namespace Olekstra.Sdk.AzureRequestLogger
         [InlineData("abc\t\r\n123", "abc___123")]
         public void ItWorks(string value, string sanitizedValue)
         {
-            Assert.Equal(sanitizedValue, LogService.SanitizeKeyValue(value), StringComparer.Ordinal);
+            Assert.Equal(sanitizedValue, LogService.SanitizeKeyValue(value, '_'), StringComparer.Ordinal);
         }
     }
 }
