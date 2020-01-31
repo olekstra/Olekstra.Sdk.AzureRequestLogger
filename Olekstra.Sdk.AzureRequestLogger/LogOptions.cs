@@ -16,7 +16,7 @@
 
         public List<PathString> Paths { get; } = new List<PathString>();
 
-        public int BodyLengthLimit { get; set; } = 20_000;
+        public int BodyLengthLimit { get; set; } = 10_000;
 
         public char KeySanitizationReplacement { get; set; } = '_';
 

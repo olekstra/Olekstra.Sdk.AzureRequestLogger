@@ -45,8 +45,6 @@
 
             var request = context.Request;
 
-            request.EnableBuffering();
-
             var logEntity = new LogEntity(request.Path.ToString(), DateTimeOffset.UtcNow)
             {
                 Method = request.Method,
@@ -54,15 +52,17 @@
                 IP = context.Connection.RemoteIpAddress.ToString(),
             };
 
-            if (request.Body != null)
+            if (request.Body != null && bodyLengthLimit != 0)
             {
+                request.EnableBuffering();
                 using var reader = new StreamReader(request.Body, leaveOpen: true);
                 logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
                 logEntity.RequestBodyLength = request.Body.Length;
 
-                if (logEntity.RequestBodyLength > bodyLengthLimit)
+                if (bodyLengthLimit > 0 && logEntity.RequestBodyLength > bodyLengthLimit)
                 {
-                    logEntity.RequestBody = "(TRUNCATED) " + logEntity.RequestBody.Substring(0, bodyLengthLimit);
+                    logEntity.RequestBody = logEntity.RequestBody.Substring(0, bodyLengthLimit);
+                    logEntity.RequestBodyTruncated = true;
                 }
 
                 request.Body.Position = 0;
@@ -71,7 +71,10 @@
             var elapsed = TimeSpan.Zero;
 
             var originalResponseBody = context.Response.Body;
-            context.Response.Body = new MemoryStream();
+            if (bodyLengthLimit != 0)
+            {
+                context.Response.Body = new MemoryStream();
+            }
 
             var logFeature = new AzureRequestLoggerFeature(logEntity);
             if (context.Features.IsReadOnly)
@@ -101,22 +104,26 @@
                 logEntity.StatusCode = response.StatusCode;
                 logEntity.TotalMilliseconds = (long)sw.Elapsed.TotalMilliseconds;
 
-                var ms = (MemoryStream)response.Body;
-                ms.Position = 0;
-                using var reader = new StreamReader(ms, leaveOpen: true);
-                logEntity.ResponseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
-                logEntity.ResponseBodyLength = ms.Length;
-
-                if (logEntity.ResponseBodyLength > bodyLengthLimit)
+                if (bodyLengthLimit != 0)
                 {
-                    logEntity.ResponseBody = "(TRUNCATED) " + logEntity.ResponseBody.Substring(0, bodyLengthLimit);
+                    var ms = (MemoryStream)response.Body;
+                    ms.Position = 0;
+                    using var reader = new StreamReader(ms, leaveOpen: true);
+                    logEntity.ResponseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                    logEntity.ResponseBodyLength = ms.Length;
+
+                    if (bodyLengthLimit > 0 && logEntity.ResponseBodyLength > bodyLengthLimit)
+                    {
+                        logEntity.ResponseBody = logEntity.ResponseBody.Substring(0, bodyLengthLimit);
+                        logEntity.ResponseBodyTruncated = true;
+                    }
+
+                    context.Response.Body = originalResponseBody;
+
+                    ms.Position = 0;
+                    await ms.CopyToAsync(originalResponseBody).ConfigureAwait(false);
+                    await ms.DisposeAsync();
                 }
-
-                context.Response.Body = originalResponseBody;
-
-                ms.Position = 0;
-                await ms.CopyToAsync(originalResponseBody).ConfigureAwait(false);
-                await ms.DisposeAsync();
 
                 logService.Log(logEntity);
             }

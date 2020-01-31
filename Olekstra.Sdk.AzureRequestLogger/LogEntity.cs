@@ -40,6 +40,8 @@
         public string? ResponseBody { get; set; }
         public long RequestBodyLength { get; set; }
         public long ResponseBodyLength { get; set; }
+        public bool RequestBodyTruncated { get; set; }
+        public bool ResponseBodyTruncated { get; set; }
         public string? Exception { get; set; }
         public string? IP { get; set; }
 
@@ -81,6 +83,9 @@
             RequestBodyLength = properties[nameof(RequestBodyLength)].Int32Value.Value;
             ResponseBodyLength = properties[nameof(ResponseBodyLength)].Int32Value.Value;
 
+            RequestBodyTruncated = properties.TryGet(nameof(RequestBodyTruncated))?.BooleanValue ?? false;
+            ResponseBodyTruncated = properties.TryGet(nameof(ResponseBodyTruncated))?.BooleanValue ?? false;
+
             Exception = properties.TryGet(nameof(Exception))?.StringValue;
             IP = properties.TryGet(nameof(IP))?.StringValue;
 #pragma warning restore CS8629 // Nullable value type may be null.
@@ -113,6 +118,16 @@
                 [nameof(Exception)] = new EntityProperty(Exception),
                 [nameof(IP)] = new EntityProperty(IP)
             };
+
+            if (RequestBodyTruncated)
+            {
+                dic[nameof(RequestBodyTruncated)] = new EntityProperty(RequestBodyTruncated);
+            }
+
+            if (ResponseBodyTruncated)
+            {
+                dic[nameof(ResponseBodyTruncated)] = new EntityProperty(ResponseBodyTruncated);
+            }
 
             if (additionalValues != null)
             {
