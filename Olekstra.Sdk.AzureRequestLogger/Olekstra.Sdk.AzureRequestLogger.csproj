@@ -15,9 +15,9 @@
 
     <Copyright>Olekstra LLC, 2019</Copyright>
 
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
 
-    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.1</PackageReleaseNotes>
+    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.2</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.1.2" />
     <PackageReference Include="Microsoft.Azure.Cosmos.Table" Version="2.0.0-preview" />
   </ItemGroup>
 

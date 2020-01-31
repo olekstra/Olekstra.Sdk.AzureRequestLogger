@@ -14,7 +14,9 @@
         private readonly RequestDelegate next;
         private readonly LogService logService;
         private readonly List<PathString> paths;
+        private readonly bool useAttachments;
         private readonly int bodyLengthLimit;
+        private readonly char keySanitizationReplacement;
         private readonly ILogger logger;
 
         public LogMiddleware(RequestDelegate next, LogOptions options, ILoggerFactory loggerFactory)
@@ -22,7 +24,9 @@
             this.next = next ?? throw new ArgumentNullException(nameof(next));
             this.logService = new LogService(options, loggerFactory.CreateLogger<LogService>());
             this.paths = options.Paths;
+            this.useAttachments = options.UseAttachments;
             this.bodyLengthLimit = options.BodyLengthLimit;
+            this.keySanitizationReplacement = options.KeySanitizationReplacement;
             this.logger = loggerFactory.CreateLogger<LogMiddleware>();
         }
 
@@ -76,13 +80,16 @@
                 context.Response.Body = new MemoryStream();
             }
 
-            var logFeature = new AzureRequestLoggerFeature(logEntity);
+            AzureRequestLoggerFeature? logFeature = null;
+            Lazy<Dictionary<string, MemoryStream>>? lazyAttachments = null;
             if (context.Features.IsReadOnly)
             {
                 logger.LogDebug($"HttpContext.Features.IsReadOnly={context.Features.IsReadOnly}, will not use own feature.");
             }
             else
             {
+                lazyAttachments = useAttachments ? new Lazy<Dictionary<string, MemoryStream>>() : default;
+                logFeature = new AzureRequestLoggerFeature(logEntity, lazyAttachments);
                 context.Features.Set(logFeature);
             }
 
@@ -99,14 +106,12 @@
             }
             finally
             {
-                var response = context.Response;
-
-                logEntity.StatusCode = response.StatusCode;
+                logEntity.StatusCode = context.Response.StatusCode;
                 logEntity.TotalMilliseconds = (long)sw.Elapsed.TotalMilliseconds;
 
                 if (bodyLengthLimit != 0)
                 {
-                    var ms = (MemoryStream)response.Body;
+                    var ms = (MemoryStream)context.Response.Body;
                     ms.Position = 0;
                     using var reader = new StreamReader(ms, leaveOpen: true);
                     logEntity.ResponseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
@@ -126,6 +131,17 @@
                 }
 
                 logService.Log(logEntity);
+
+                if (lazyAttachments != null && lazyAttachments.IsValueCreated)
+                {
+                    var pk = LogService.SanitizeKeyValue(logEntity.PartitionKey, keySanitizationReplacement);
+                    var rk = LogService.SanitizeKeyValue(logEntity.RowKey, keySanitizationReplacement);
+
+                    foreach (var pair in lazyAttachments.Value)
+                    {
+                        logService.Attach(pair.Value, $"{pk}/{rk}/{pair.Key}");
+                    }
+                }
             }
         }
     }

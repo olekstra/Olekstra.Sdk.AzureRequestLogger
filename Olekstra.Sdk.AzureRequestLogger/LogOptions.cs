@@ -20,6 +20,8 @@
 
         public char KeySanitizationReplacement { get; set; } = '_';
 
+        public bool UseAttachments { get; set; } = true;
+
         /// <summary>
         /// Adds path to <see cref="Paths"/> list.
         /// </summary>
@@ -74,6 +76,17 @@
         public LogOptions MaxBody(int sizeInBytes)
         {
             this.BodyLengthLimit = sizeInBytes;
+            return this;
+        }
+
+        /// <summary>
+        /// Set <see cref="UseAttachments"/> property.
+        /// </summary>
+        /// <param name="value">Value to set.</param>
+        /// <returns>Current <see cref="LogOptions"/> object.</returns>
+        public LogOptions Attachments(bool value)
+        {
+            this.UseAttachments = value;
             return this;
         }
     }

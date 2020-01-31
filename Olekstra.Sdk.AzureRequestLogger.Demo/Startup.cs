@@ -47,6 +47,13 @@ namespace Olekstra.Sdk.AzureRequestLogger.Demo
                     var text = await reader.ReadToEndAsync();
                     await context.Response.WriteAsync("Hello, " + text);
                 });
+
+                endpoints.MapPost("/test/attach", async context =>
+                {
+                    var feature = context.Features.Get<AzureRequestLoggerFeature>();
+                    await feature.SaveAttachmentAsync(context.Request.Body, "body.txt").ConfigureAwait(false);
+                    await context.Response.WriteAsync("OK");
+                });
             });
         }
     }
