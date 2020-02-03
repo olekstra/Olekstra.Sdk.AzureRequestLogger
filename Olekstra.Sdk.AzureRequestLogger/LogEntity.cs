@@ -45,6 +45,10 @@
         public string? Exception { get; set; }
         public string? IP { get; set; }
 
+#pragma warning disable CA2227 // Making this read-only will need to always initialize it with empty list, but it will be unused in 99%
+        public List<string>? Attachments { get; set; }
+#pragma warning restore CA2227 // Collection properties should be read only
+
         public Dictionary<string, string> AdditionalValues
         {
             get
@@ -94,6 +98,8 @@
             {
                 AdditionalValues.Add(p.Key.Substring(AdditionalValuePrefix.Length), p.Value.StringValue);
             }
+
+            Attachments = properties.TryGetDeserialized<List<string>>(nameof(Attachments));
         }
 
         /*
@@ -138,6 +144,11 @@
                         dic.Add(AdditionalValuePrefix + kv.Key, new EntityProperty(kv.Value));
                     }
                 }
+            }
+
+            if (Attachments != null)
+            {
+                dic.SetSerialized(nameof(Attachments), Attachments);
             }
 
             return dic;

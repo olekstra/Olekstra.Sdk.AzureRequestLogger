@@ -130,8 +130,6 @@
                     await ms.DisposeAsync();
                 }
 
-                logService.Log(logEntity);
-
                 if (lazyAttachments != null && lazyAttachments.IsValueCreated)
                 {
                     var pk = LogService.SanitizeKeyValue(logEntity.PartitionKey, keySanitizationReplacement);
@@ -141,7 +139,11 @@
                     {
                         logService.Attach(pair.Value, $"{pk}/{rk}/{pair.Key}");
                     }
+
+                    logEntity.Attachments = lazyAttachments.Value.Keys.ToList();
                 }
+
+                logService.Log(logEntity);
             }
         }
     }
