@@ -60,10 +60,9 @@
             {
                 request.EnableBuffering();
                 using var reader = new StreamReader(request.Body, leaveOpen: true);
-                logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
                 logEntity.RequestBodyLength = request.Body.Length;
-
-                if (bodyLengthLimit > 0 && logEntity.RequestBodyLength > bodyLengthLimit)
+                logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                if (bodyLengthLimit > 0 && logEntity.RequestBody.Length > bodyLengthLimit)
                 {
                     logEntity.RequestBody = logEntity.RequestBody.Substring(0, bodyLengthLimit);
                     logEntity.RequestBodyTruncated = true;
