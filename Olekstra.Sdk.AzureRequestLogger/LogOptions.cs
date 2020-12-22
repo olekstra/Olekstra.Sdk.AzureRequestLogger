@@ -22,6 +22,12 @@
 
         public bool UseAttachments { get; set; } = true;
 
+        public bool AutosaveBodyAttachments { get; set; } = false;
+
+        public string RequestBodyAttachmentName { get; set; } = "body_request.dat";
+
+        public string ResponseBodyAttachmentName { get; set; } = "body_response.dat";
+
         /// <summary>
         /// Adds path to <see cref="Paths"/> list.
         /// </summary>

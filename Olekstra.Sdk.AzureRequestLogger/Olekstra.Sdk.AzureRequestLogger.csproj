@@ -6,7 +6,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Authors>Dmitry Popov</Authors>
     <Company>Olekstra LLC</Company>
-    <Description>Allows you to log incoming (API) requests to Azure Table Storage.</Description>
+    <Description>Allows you to log incoming (API) requests to Azure Table Storage (and optionally dump large requests to Blob Storage).</Description>
     <PackageProjectUrl>https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger</PackageProjectUrl>
     <RepositoryUrl>git</RepositoryUrl>
     <RepositoryType>https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger.git</RepositoryType>
@@ -15,9 +15,9 @@
 
     <Copyright>Olekstra LLC, 2019</Copyright>
 
-    <Version>2.2.3</Version>
+    <Version>2.3.0</Version>
 
-    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.2</PackageReleaseNotes>
+    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.3</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

@@ -17,6 +17,9 @@
         private readonly bool useAttachments;
         private readonly int bodyLengthLimit;
         private readonly char keySanitizationReplacement;
+        private readonly bool autosaveAttachments;
+        private readonly string requestBodyAttachmentName;
+        private readonly string responseBodyAttachmentName;
         private readonly ILogger logger;
 
         public LogMiddleware(RequestDelegate next, LogOptions options, ILoggerFactory loggerFactory)
@@ -27,6 +30,9 @@
             this.useAttachments = options.UseAttachments;
             this.bodyLengthLimit = options.BodyLengthLimit;
             this.keySanitizationReplacement = options.KeySanitizationReplacement;
+            this.autosaveAttachments = options.AutosaveBodyAttachments;
+            this.requestBodyAttachmentName = options.RequestBodyAttachmentName;
+            this.responseBodyAttachmentName = options.ResponseBodyAttachmentName;
             this.logger = loggerFactory.CreateLogger<LogMiddleware>();
         }
 
@@ -56,29 +62,6 @@
                 IP = context.Connection.RemoteIpAddress.ToString(),
             };
 
-            if (request.Body != null && bodyLengthLimit != 0)
-            {
-                request.EnableBuffering();
-                using var reader = new StreamReader(request.Body, leaveOpen: true);
-                logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
-                logEntity.RequestBodyLength = logEntity.RequestBody.Length;
-                if (bodyLengthLimit > 0 && logEntity.RequestBodyLength > bodyLengthLimit)
-                {
-                    logEntity.RequestBody = logEntity.RequestBody.Substring(0, bodyLengthLimit);
-                    logEntity.RequestBodyTruncated = true;
-                }
-
-                request.Body.Position = 0;
-            }
-
-            var elapsed = TimeSpan.Zero;
-
-            var originalResponseBody = context.Response.Body;
-            if (bodyLengthLimit != 0)
-            {
-                context.Response.Body = new MemoryStream();
-            }
-
             AzureRequestLoggerFeature? logFeature = null;
             Lazy<Dictionary<string, MemoryStream>>? lazyAttachments = null;
             if (context.Features.IsReadOnly)
@@ -93,6 +76,34 @@
             }
 
             var sw = Stopwatch.StartNew();
+
+            if (request.Body != null && bodyLengthLimit != 0)
+            {
+                request.EnableBuffering();
+                using var reader = new StreamReader(request.Body, leaveOpen: true);
+                logEntity.RequestBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+                logEntity.RequestBodyLength = logEntity.RequestBody.Length;
+                if (bodyLengthLimit > 0 && logEntity.RequestBodyLength > bodyLengthLimit)
+                {
+                    logEntity.RequestBody = logEntity.RequestBody.Substring(0, bodyLengthLimit);
+                    logEntity.RequestBodyTruncated = true;
+
+                    if (autosaveAttachments && logFeature != null && logFeature.AttachmentsEnabled)
+                    {
+                        await logFeature.SaveAttachmentAsync(request.Body, requestBodyAttachmentName).ConfigureAwait(false);
+                    }
+                }
+
+                request.Body.Position = 0;
+            }
+
+            var elapsed = TimeSpan.Zero;
+
+            var originalResponseBody = context.Response.Body;
+            if (bodyLengthLimit != 0)
+            {
+                context.Response.Body = new MemoryStream();
+            }
 
             try
             {
@@ -120,6 +131,11 @@
                     {
                         logEntity.ResponseBody = logEntity.ResponseBody.Substring(0, bodyLengthLimit);
                         logEntity.ResponseBodyTruncated = true;
+
+                        if (autosaveAttachments && logFeature != null && logFeature.AttachmentsEnabled)
+                        {
+                            await logFeature.SaveAttachmentAsync(ms, responseBodyAttachmentName).ConfigureAwait(false);
+                        }
                     }
 
                     context.Response.Body = originalResponseBody;
