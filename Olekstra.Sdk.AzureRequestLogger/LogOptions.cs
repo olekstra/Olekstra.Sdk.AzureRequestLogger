@@ -95,5 +95,29 @@
             this.UseAttachments = value;
             return this;
         }
+
+        /// <summary>
+        /// Set <see cref="AutosaveBodyAttachments"/> property.
+        /// </summary>
+        /// <param name="value">Value to set.</param>
+        /// <returns>Current <see cref="LogOptions"/> object.</returns>
+        public LogOptions AutosaveBody(bool value = true)
+        {
+            this.AutosaveBodyAttachments = value;
+            return this;
+        }
+
+        /// <summary>
+        /// Sets <see cref="AutosaveBodyAttachments"/> property to <b>true</b>, and <see cref="RequestBodyAttachmentName"/> and <see cref="ResponseBodyAttachmentName"/> properties to specified values.
+        /// </summary>
+        /// <param name="value">Value to set.</param>
+        /// <returns>Current <see cref="LogOptions"/> object.</returns>
+        public LogOptions AutosaveBody(string requestBodyName, string responseBodyName)
+        {
+            this.AutosaveBodyAttachments = true;
+            this.RequestBodyAttachmentName = requestBodyName;
+            this.ResponseBodyAttachmentName = responseBodyName;
+            return this;
+        }
     }
 }
