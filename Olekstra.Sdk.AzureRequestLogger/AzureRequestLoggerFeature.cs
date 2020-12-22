@@ -30,6 +30,7 @@
             name = name ?? throw new ArgumentNullException(nameof(name));
 
             var ms = new MemoryStream();
+            body.Position = 0;
             await body.CopyToAsync(ms).ConfigureAwait(false);
             body.Position = 0;
             attachments.Value[name] = ms;
