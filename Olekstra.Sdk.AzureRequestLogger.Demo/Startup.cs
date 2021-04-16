@@ -18,6 +18,7 @@ namespace Olekstra.Sdk.AzureRequestLogger.Demo
             app.UseAzureRequestLogger(o =>
                 o.For("/test")
                  .For("/test2")
+                 .For(p => p.ToString().EndsWith("oops", StringComparison.InvariantCultureIgnoreCase))
                  .UsingConnectionString("UseDevelopmentStorage=true;")
                  .IntoTable("logs", TableNameSuffixMode.YearAndQuarter)
                  .Every(TimeSpan.FromSeconds(5)));

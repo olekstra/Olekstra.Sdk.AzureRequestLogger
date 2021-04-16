@@ -16,6 +16,8 @@
 
         public List<PathString> Paths { get; } = new List<PathString>();
 
+        public List<Func<PathString, bool>> PathFunctions { get; } = new List<Func<PathString, bool>>();
+
         public int BodyLengthLimit { get; set; } = 10_000;
 
         public char KeySanitizationReplacement { get; set; } = '_';
@@ -36,6 +38,17 @@
         public LogOptions For(PathString path)
         {
             this.Paths.Add(path);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds path function to <see cref="PathFunctions"/> list.
+        /// </summary>
+        /// <param name="pathFunction">Path function to add.</param>
+        /// <returns>Current <see cref="LogOptions"/> object.</returns>
+        public LogOptions For(Func<PathString, bool> pathFunction)
+        {
+            this.PathFunctions.Add(pathFunction ?? throw new ArgumentNullException(nameof(pathFunction)));
             return this;
         }
 

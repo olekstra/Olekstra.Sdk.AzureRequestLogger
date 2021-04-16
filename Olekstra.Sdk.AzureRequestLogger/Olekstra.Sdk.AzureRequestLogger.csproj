@@ -15,9 +15,9 @@
 
     <Copyright>Olekstra LLC, 2019</Copyright>
 
-    <Version>2.3.2</Version>
+    <Version>2.4.0</Version>
 
-    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.3</PackageReleaseNotes>
+    <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.4</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

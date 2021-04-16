@@ -14,6 +14,7 @@
         private readonly RequestDelegate next;
         private readonly LogService logService;
         private readonly List<PathString> paths;
+        private readonly List<Func<PathString, bool>> pathFunctions;
         private readonly bool useAttachments;
         private readonly int bodyLengthLimit;
         private readonly char keySanitizationReplacement;
@@ -27,6 +28,7 @@
             this.next = next ?? throw new ArgumentNullException(nameof(next));
             this.logService = new LogService(options, loggerFactory.CreateLogger<LogService>());
             this.paths = options.Paths;
+            this.pathFunctions = options.PathFunctions;
             this.useAttachments = options.UseAttachments;
             this.bodyLengthLimit = options.BodyLengthLimit;
             this.keySanitizationReplacement = options.KeySanitizationReplacement;
@@ -41,7 +43,8 @@
             context = context ?? throw new ArgumentNullException(nameof(context));
             var path = context.Request.Path;
 
-            if (paths.Any(p => path.StartsWithSegments(p, StringComparison.InvariantCultureIgnoreCase)))
+            if (paths.Any(p => path.StartsWithSegments(p, StringComparison.InvariantCultureIgnoreCase))
+                || pathFunctions.Any(f => f(path)))
             {
                 return DoLogging(context);
             }
