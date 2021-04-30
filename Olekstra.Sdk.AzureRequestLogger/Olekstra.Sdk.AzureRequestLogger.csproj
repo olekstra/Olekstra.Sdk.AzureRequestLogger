@@ -13,9 +13,9 @@
 
     <Nullable>enable</Nullable>
 
-    <Copyright>Olekstra LLC, 2019</Copyright>
+    <Copyright>Olekstra LLC, 2019-2021</Copyright>
 
-    <Version>2.4.1</Version>
+    <Version>2.4.2</Version>
 
     <PackageReleaseNotes>See https://github.com/olekstra/Olekstra.Sdk.AzureRequestLogger/releases/tag/v2.4</PackageReleaseNotes>
   </PropertyGroup>

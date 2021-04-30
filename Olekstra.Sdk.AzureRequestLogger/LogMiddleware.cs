@@ -116,11 +116,11 @@
             catch (Exception ex)
             {
                 logEntity.Exception = ex.ToString();
+                logEntity.StatusCode = StatusCodes.Status500InternalServerError;
                 throw;
             }
             finally
             {
-                logEntity.StatusCode = StatusCodes.Status500InternalServerError;
                 logEntity.TotalMilliseconds = (long)sw.Elapsed.TotalMilliseconds;
 
                 if (bodyLengthLimit != 0)
