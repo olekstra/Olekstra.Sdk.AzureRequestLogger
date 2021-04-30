@@ -111,6 +111,7 @@
             try
             {
                 await next(context).ConfigureAwait(false);
+                logEntity.StatusCode = context.Response.StatusCode;
             }
             catch (Exception ex)
             {
@@ -119,7 +120,7 @@
             }
             finally
             {
-                logEntity.StatusCode = context.Response.StatusCode;
+                logEntity.StatusCode = StatusCodes.Status500InternalServerError;
                 logEntity.TotalMilliseconds = (long)sw.Elapsed.TotalMilliseconds;
 
                 if (bodyLengthLimit != 0)
