@@ -7,17 +7,16 @@
     using System.IO.Compression;
     using System.Linq;
     using System.Threading.Tasks;
+    using Azure.Data.Tables;
+    using Azure.Storage.Blobs;
+    using Azure.Storage.Blobs.Models;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Azure.Cosmos.Table;
-    using Microsoft.Azure.Storage.Blob;
 
     public class LogService
     {
         private const int MaxBatch = 100;
 
         private readonly LogOptions options;
-
-        private readonly CloudTableClient cloudTableClient;
 
         private readonly ILogger logger;
 
@@ -27,16 +26,13 @@
 
         private readonly Task saveLogTask;
 
-        private CloudTable? cloudTable;
+        private TableClient? cloudTable;
 
-        private CloudBlobContainer? cloudBlobContainer;
+        private BlobContainerClient? cloudBlobContainer;
 
         public LogService(LogOptions options, ILogger<LogService> logger)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
-
-            var storageAccount = Microsoft.Azure.Cosmos.Table.CloudStorageAccount.Parse(options.ConnectionString);
-            cloudTableClient = storageAccount.CreateCloudTableClient();
 
             this.logger = logger;
 
@@ -116,7 +112,7 @@
 
         private async Task SaveLogEntriesAsync()
         {
-            if (logEntities.Count == 0)
+            if (logEntities.IsEmpty)
             {
                 logger.LogTrace("No logs to save");
                 return;
@@ -125,9 +121,9 @@
             var tableNameWithSuffix = BuildTableName();
             if (cloudTable == null || cloudTable.Name != tableNameWithSuffix)
             {
-                cloudTable = cloudTableClient.GetTableReference(tableNameWithSuffix);
+                cloudTable = new TableClient(options.ConnectionString, tableNameWithSuffix);
                 var tableCreated = await cloudTable.CreateIfNotExistsAsync().ConfigureAwait(false);
-                logger.LogInformation($"Switched to table {tableNameWithSuffix} (created = {tableCreated})");
+                logger.LogInformation($"Switched to table {tableNameWithSuffix} (created = {tableCreated != null})");
             }
 
             var entities = new List<LogEntity>(MaxBatch);
@@ -135,9 +131,6 @@
             {
                 if (logEntities.TryTake(out var item))
                 {
-                    item.PartitionKey = SanitizeKeyValue(item.PartitionKey, options.KeySanitizationReplacement);
-                    item.RowKey = SanitizeKeyValue(item.RowKey, options.KeySanitizationReplacement);
-
                     entities.Add(item);
                 }
                 else
@@ -150,13 +143,9 @@
             var groupCount = 0;
             foreach (var entityGroup in entitiesGroups)
             {
-                TableBatchOperation batch = new TableBatchOperation();
-                foreach (var entity in entityGroup)
-                {
-                    batch.Add(TableOperation.Insert(entity));
-                }
-
-                await cloudTable.ExecuteBatchAsync(batch).ConfigureAwait(false);
+                var batch = new List<TableTransactionAction>();
+                batch.AddRange(entityGroup.Select(x => new TableTransactionAction(TableTransactionActionType.Add, x.CreateTableEntity(options.KeySanitizationReplacement))));
+                await cloudTable.SubmitTransactionAsync(batch).ConfigureAwait(false);
                 groupCount++;
             }
 
@@ -165,7 +154,7 @@
 
         private async Task SaveAttachmentsAsync()
         {
-            if (attachments.Count == 0)
+            if (attachments.IsEmpty)
             {
                 logger.LogTrace("No attachments to save");
                 return;
@@ -177,11 +166,9 @@
 
             if (cloudBlobContainer == null || cloudBlobContainer.Name != tableNameWithSuffix)
             {
-                var account = Microsoft.Azure.Storage.CloudStorageAccount.Parse(options.ConnectionString);
-                var client = account.CreateCloudBlobClient();
-                cloudBlobContainer = client.GetContainerReference(tableNameWithSuffix);
+                cloudBlobContainer = new BlobContainerClient(options.ConnectionString, tableNameWithSuffix);
                 var containerCreated = await cloudBlobContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
-                logger.LogInformation($"Switched to container {tableNameWithSuffix} (created = {containerCreated})");
+                logger.LogInformation($"Switched to container {tableNameWithSuffix} (created = {containerCreated != null})");
             }
 
             var count = 0;
@@ -204,9 +191,13 @@
 
                 compressedStream.Position = 0;
 
-                var blob = cloudBlobContainer.GetBlockBlobReference(item.name);
-                blob.Properties.ContentEncoding = "gzip";
-                await blob.UploadFromStreamAsync(compressedStream).ConfigureAwait(false);
+                var headers = new BlobHttpHeaders
+                {
+                    ContentEncoding = "gzip",
+                };
+
+                var blob = cloudBlobContainer.GetBlobClient(item.name);
+                await blob.UploadAsync(compressedStream, headers).ConfigureAwait(false);
                 logger.LogDebug($"Saved {item.name} ({originalStream.Length} bytes compressed to {compressedStream.Length} bytes)");
             }
 

@@ -58,11 +58,10 @@
 
             var request = context.Request;
 
-            var logEntity = new LogEntity(request.Path.ToString(), DateTimeOffset.UtcNow)
+            var logEntity = new LogEntity(request.Method, request.Path.ToString(), DateTimeOffset.UtcNow)
             {
-                Method = request.Method,
                 Query = request.QueryString.HasValue ? request.QueryString.ToString() : default,
-                IP = context.Connection.RemoteIpAddress.ToString(),
+                IP = context.Connection.RemoteIpAddress?.ToString() ?? "-null-",
             };
 
             AzureRequestLoggerFeature? logFeature = null;
@@ -99,8 +98,6 @@
 
                 request.Body.Position = 0;
             }
-
-            var elapsed = TimeSpan.Zero;
 
             var originalResponseBody = context.Response.Body;
             if (bodyLengthLimit != 0)
