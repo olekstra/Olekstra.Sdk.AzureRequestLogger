@@ -68,7 +68,7 @@
             Lazy<Dictionary<string, MemoryStream>>? lazyAttachments = null;
             if (context.Features.IsReadOnly)
             {
-                logger.LogDebug($"HttpContext.Features.IsReadOnly={context.Features.IsReadOnly}, will not use own feature.");
+                logger.LogDebug("HttpContext.Features.IsReadOnly={IsReadOnly}, will not use own feature.", context.Features.IsReadOnly);
             }
             else
             {

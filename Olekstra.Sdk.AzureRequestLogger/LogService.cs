@@ -92,7 +92,7 @@
 
         private async Task SaveLoop()
         {
-            logger.LogDebug($"Started (in SaveLoop) with table {options.TableName} and suffix mode {options.TableNameSuffixMode}");
+            logger.LogDebug("Started (in SaveLoop) with table {TableName} and suffix mode {TableNameSuffixMode}", options.TableName, options.TableNameSuffixMode);
 
             while (true)
             {
@@ -103,7 +103,7 @@
                 }
                 catch (Exception e)
                 {
-                    logger.LogError(e.Message + "\r\n" + e.StackTrace);
+                    logger.LogError("{Message}\r\n{StackTrace}", e.Message, e.StackTrace);
                 }
 
                 await Task.Delay(options.Interval).ConfigureAwait(false);
@@ -123,7 +123,7 @@
             {
                 cloudTable = new TableClient(options.ConnectionString, tableNameWithSuffix);
                 var tableCreated = await cloudTable.CreateIfNotExistsAsync().ConfigureAwait(false);
-                logger.LogInformation($"Switched to table {tableNameWithSuffix} (created = {tableCreated != null})");
+                logger.LogInformation("Switched to table {TableNameWithSuffix} (created = {Created})", tableNameWithSuffix, tableCreated != null);
             }
 
             var entities = new List<LogEntity>(MaxBatch);
@@ -149,7 +149,7 @@
                 groupCount++;
             }
 
-            logger.LogDebug($"Saved {entities.Count} entities into Azure Table in {groupCount} batches");
+            logger.LogDebug("Saved {Count} entities into Azure Table in {GroupCount} batches", entities.Count, groupCount);
         }
 
         private async Task SaveAttachmentsAsync()
@@ -161,14 +161,14 @@
             }
 
 #pragma warning disable CA1308 // Container names must be lowercase! https://docs.microsoft.com/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata
-            var tableNameWithSuffix = BuildTableName().ToLowerInvariant();
+            var containerNameWithSuffix = BuildTableName().ToLowerInvariant();
 #pragma warning restore CA1308 // Normalize strings to uppercase
 
-            if (cloudBlobContainer == null || cloudBlobContainer.Name != tableNameWithSuffix)
+            if (cloudBlobContainer == null || cloudBlobContainer.Name != containerNameWithSuffix)
             {
-                cloudBlobContainer = new BlobContainerClient(options.ConnectionString, tableNameWithSuffix);
+                cloudBlobContainer = new BlobContainerClient(options.ConnectionString, containerNameWithSuffix);
                 var containerCreated = await cloudBlobContainer.CreateIfNotExistsAsync().ConfigureAwait(false);
-                logger.LogInformation($"Switched to container {tableNameWithSuffix} (created = {containerCreated != null})");
+                logger.LogInformation("Switched to container {ContainerNameWithSuffix} (created = {Created})", containerNameWithSuffix, containerCreated != null);
             }
 
             var count = 0;
@@ -198,10 +198,10 @@
 
                 var blob = cloudBlobContainer.GetBlobClient(item.name);
                 await blob.UploadAsync(compressedStream, headers).ConfigureAwait(false);
-                logger.LogDebug($"Saved {item.name} ({originalStream.Length} bytes compressed to {compressedStream.Length} bytes)");
+                logger.LogDebug("Saved {Name} ({OriginalLength} bytes compressed to {CompressedLength} bytes)", item.name, originalStream.Length, compressedStream.Length);
             }
 
-            logger.LogDebug($"Saved {count} attachments into Azure Storage");
+            logger.LogDebug("Saved {Count} attachments into Azure Storage", count);
         }
     }
 }
