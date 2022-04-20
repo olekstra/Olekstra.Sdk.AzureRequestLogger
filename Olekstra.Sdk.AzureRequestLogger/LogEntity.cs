@@ -20,12 +20,12 @@
             this.RowKey = requestTime.GetInvertedTicks();
         }
 
-        public string PartitionKey { get; private set; }
-        public string RowKey { get; private set; }
+        public string PartitionKey { get; set; }
+        public string RowKey { get; set; }
 
-        public DateTimeOffset RequestTime { get; private set; }
-        public string Method { get; private set; }
-        public string Path { get; private set; }
+        public DateTimeOffset RequestTime { get; set; }
+        public string Method { get; set; }
+        public string Path { get; set; }
 
         public string? Query { get; set; }
         public int StatusCode { get; set; }
